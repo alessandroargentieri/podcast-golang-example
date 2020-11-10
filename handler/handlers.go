@@ -8,6 +8,7 @@ import (
 	"podcast/util"
 	"encoding/json"
 	"fmt"
+	"errors"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -37,7 +38,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
     if r.Method == http.MethodOptions {
         return
     }
-	w.Write([]byte(`{"result": {"success": true, "uptime": "` + uptime().String() + `"}}`))
+	w.Write([]byte(`{"success": true, "uptime": "` + uptime().String() + `"}`))
 }
 
 func AddPodcastHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,52 +47,112 @@ func AddPodcastHandler(w http.ResponseWriter, r *http.Request) {
     if r.Method == http.MethodOptions {
         return
     }
+
+    var err error
+    var podcast model.Podcast
+
+    podcast, err = parseJsonPodcast(r.Body)
+    if err!=nil {
+        podcast, err = middleware.AddPodcast(podcast)
+    } else {
+    	err = errors.New("400 - Bad Request: error while parsing the json. ")
+    }
+    SendJsonResponse(w, []model.Podcast{ podcast }, err)
 }
+
 func GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(r)
     setHeaders(w)
 
+    var err error
     var podcasts []model.Podcast
 
-    id, found := mux.Vars(r)["id"]
-    if !found {
+    id, id_found := mux.Vars(r)["id"]
+    if !id_found {
     	podcasts, err = middleware.GetAllPodcasts()
     }
     podcasts, err = middleware.GetPodcastsById(id)
 
     SendJsonResponse(w, podcasts, err)
-
 }
-
-
-
-
 func DeletePodcastHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(r)
     setHeaders(w)
-    pid, pid_found := mux.Vars(r)["id"]
+
+    var err error
+    
+    id, id_found := mux.Vars(r)["id"]
+    if !id_found {
+        err = errors.New("400 - Bad Request: Podcast id is missing. ")
+    } else {
+    	err = middleware.DeletePodcastById(id)
+    }
+    SendJsonResponse(w, []model.Podcast{ _id: id }, err)
 }
+
 func AddEpisodeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(r)
     setHeaders(w)
     if r.Method == http.MethodOptions {
         return
     }
+    
+    var err error
+    var episode model.Episode
+    
+    id, id_found := mux.Vars(r)["id"]
+    if !id_found {
+        err = errors.New("400 - Bad Request: Podcast id is missing. ")
+    } else {
+        episode, err = parseJsonEpisode(r.Body)
+        if err!=nil {
+            episode, err = middleware.AddEpisode(id, episode)
+        } else {
+        	err = errors.New("400 - Bad Request: Error while parsing the json. ")
+        }
+    }
+     SendJsonResponse(w, []model.Episode{ episode }, err)
 }
 func GetEpisodeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(r)
     setHeaders(w)
-    pid, pid_found := mux.Vars(r)["pid"]
-    eid, eid_found := mux.Vars(r)["eid"]
+    
+    var err error
+    var episodes []model.Episode
+    
+    id, id_found := mux.Vars(r)["id"]
+    if !id_found {
+        err = errors.New("400 - Bad Request: Podcast id is missing. ")
+    } else {
+        n, n_found := mux.Vars(r)["n"]
+        if !n_found {
+       	    episodes, err = middleware.GetAllEpisodesByPodcastId(id)
+        }
+        episodes, err = middleware.GetEpisodesByNumber(n)
+    }
+    SendJsonResponse(w, episodes, err)
+    
 }
 func DeleteEpisodeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(r)
     setHeaders(w)
-    pid, pid_found := mux.Vars(r)["pid"]
-    eid, eid_found := mux.Vars(r)["eid"]
+    
+    var err error
+
+    id, id_found := mux.Vars(r)["id"]
+    if !id_found {
+        err = errors.New("400 - Bad Request: Podcast id is missing. ")
+    } else {
+        n, n_found := mux.Vars(r)["n"]
+        if !n_found {
+       	    err = errors.New("400 - Bad Request: Episode number is missing. ")
+        }
+        err = middleware.DeleteEpisodeByPodcastIdAndEpisodeNumber(id, n)
+    }
+    SendJsonResponse(w, []model.Episode{}, err)
 }
 
-func GenerateResponse(entities []interface{}, err error) {
+func generateResponse(entities []interface{}, err error) {
 	if entities==nil || err!=nil {
 		return dto.ResponseWrapper{ Success: false, Error: err.Error()}
 	}
@@ -99,7 +160,7 @@ func GenerateResponse(entities []interface{}, err error) {
 }
 
 func SendJsonResponse(w http.ResponseWriter, entities []interface{}, err error) {
-	jsonBytes, _ := json.Marshal(GenerateResponse(entities, error))
+	jsonBytes, _ := json.Marshal(generateResponse(entities, error))
 	log.Debug(string(jsonBytes))
 	if err!=nil {
 		w.WriteHeader(500)
@@ -114,3 +175,39 @@ func setHeaders(w http.ResponseWriter) {
 	w.Header().Set("access-control-expose-headers", "session")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 }
+
+func parseJsonPodcast(body io.Reader) (model.Podcast, error) {
+	jsonDecoder := json.NewDecoder(body)
+
+	now := time.Now()
+	podcast := model.Podcast{
+		Created: now,
+		Updated: now,
+	}
+	err := jsonDecoder.Decode(&podcast)
+	if err != nil {
+		log.Error(err.Error())
+		return podcast, errors.New("400 - Bad Request: " + err.Error())
+	}
+	return podcast, nil
+}
+
+func parseJsonEpisode(body io.Reader) (model.Episode, error) {
+	jsonDecoder := json.NewDecoder(body)
+
+	now := time.Now()
+	episode := model.Episode{
+		Created: now,
+		Updated: now,
+	}
+	err := jsonDecoder.Decode(&episode)
+	if err != nil {
+		log.Error(err.Error())
+		return episode, errors.New("400 - Bad Request: " + err.Error())
+	}
+	return postalCode, nil
+}
+
+
+
+

@@ -5,6 +5,7 @@ import(
 )
 
 type Podcast struct {
+    _id            string    `json:"_id,omitempty"`
     Title          string    `json:"title,omitempty"`
     Author         string    `json:"author,omitempty"`
     Topic          string    `json:"topic,omitempty"`
@@ -14,6 +15,7 @@ type Podcast struct {
 }
 
 type Episode struct {
+    Number         int       `json:"number,omitempty"`
     Title          string    `json:"title,omitempty"`
     Created        time.Time `json:"created,omitempty"`
     Updated        time.Time `json:"updated,omitempty"`

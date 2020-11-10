@@ -27,9 +27,9 @@ func main() {
 	router.HandleFunc("/podcasts/{id}", handler.GetPodcastHandler).Methods(http.MethodGet)
 	router.HandleFunc("/podcasts/{id}", handler.DeletePodcastHandler).Methods(http.MethodDelete)
 
-	router.HandleFunc("/podcasts/{pid}/episodes", handler.AddEpisodeHandler).Methods(http.MethodPost, http.MethodOptions)
-	router.HandleFunc("/podcasts/{pid}/episodes/{eid}", handler.GetEpisodeHandler).Methods(http.MethodGet)
-	router.HandleFunc("/podcasts/{pid}/episodes/{eid}", handler.DeleteEpisodeHandler).Methods(http.MethodDelete)
+	router.HandleFunc("/podcasts/{id}/episodes", handler.AddEpisodeHandler).Methods(http.MethodPost, http.MethodOptions)
+	router.HandleFunc("/podcasts/{id}/episodes/{n}", handler.GetEpisodeHandler).Methods(http.MethodGet)
+	router.HandleFunc("/podcasts/{id}/episodes/{n}", handler.DeleteEpisodeHandler).Methods(http.MethodDelete)
 
 
 	//router.HandleFunc("/coverage/v1/postalCode/{id:[0-9]+}", handler.DeletePostalCodeHandler).Methods(http.MethodDelete, http.MethodOptions)
@@ -37,6 +37,6 @@ func main() {
 	router.Use(mux.CORSMethodMiddleware(router))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", env.Port), router))
-	
+
 	defer (*middleware.Repo).(repository.PostalCodeRepoImpl).Db.Close()
 }
