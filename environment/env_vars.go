@@ -11,6 +11,7 @@ var DbHost string
 var DbPort int
 var DbPassword string
 var DbName string
+var DbUser string
 var LogLevel string
 
 func init() {
@@ -43,9 +44,11 @@ func LoadConfigs() {
 
 	DbName = os.Getenv("DB_NAME")
 
+	DbUser = os.Getenv("DB_USER")
+
 	LogLevel = os.Getenv("LOG_LEVEL")
 	if LogLevel == "" {
-		LogLevel = "error"
+		LogLevel = "info"
 	}
 
 }

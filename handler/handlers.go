@@ -71,7 +71,10 @@ func GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
     if !id_found {
     	podcasts, err = middleware.GetAllPodcasts()
     }
-    podcasts, err = middleware.GetPodcastsById(id)
+    podcast, err = middleware.GetPodcastById(id)
+    if err!=nil {
+    	podcasts = append(podcasts, podcast)
+    }
 
     SendJsonResponse(w, podcasts, err)
 }
@@ -87,7 +90,7 @@ func DeletePodcastHandler(w http.ResponseWriter, r *http.Request) {
     } else {
     	err = middleware.DeletePodcastById(id)
     }
-    SendJsonResponse(w, []model.Podcast{ _id: id }, err)
+    SendJsonResponse(w, []model.Podcast{ Id: id }, err)
 }
 
 func AddEpisodeHandler(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +131,10 @@ func GetEpisodeHandler(w http.ResponseWriter, r *http.Request) {
         if !n_found {
        	    episodes, err = middleware.GetAllEpisodesByPodcastId(id)
         }
-        episodes, err = middleware.GetEpisodesByNumber(n)
+        episode, err := middleware.GetEpisodeByNumber(n)
+        if err!=nil {
+            episodes = append(episodes, episode)
+        }
     }
     SendJsonResponse(w, episodes, err)
     
@@ -163,7 +169,7 @@ func SendJsonResponse(w http.ResponseWriter, entities []interface{}, err error) 
 	jsonBytes, _ := json.Marshal(generateResponse(entities, error))
 	log.Debug(string(jsonBytes))
 	if err!=nil {
-		w.WriteHeader(500)
+		w.WriteHeader(getErrorCode(err))
 	}
   	w.Write([]byte(jsonBytes))
 }
@@ -206,6 +212,14 @@ func parseJsonEpisode(body io.Reader) (model.Episode, error) {
 		return episode, errors.New("400 - Bad Request: " + err.Error())
 	}
 	return postalCode, nil
+}
+
+func getErrorCode(err error) int {
+	code, err := strconv.Atoi(err.Error()[0:3])
+	if err!=nil {
+		return 500
+	}
+	return code
 }
 
 
