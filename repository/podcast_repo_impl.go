@@ -11,28 +11,75 @@ import (
   env "podcast/environment"
 )
 
-func main() {
+func init() {
+
+}
+
+const (
+    DATABASE   = "podcast_db"
+    COLLECTION = "podcasts"
+)
+
+type PodcastRepoImpl struct {
+   Client *mongo.Client
+  // Ctx    *context.timerCtx
+}
+
+func InitializeRepo() (PodcastRepo, error){
     connectionStr := fmt.Sprintf("mongodb://%s:%s", env.DbHost, env.DbPort) //"mongodb://localhost:27017/mydbname"
       //url := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", user, pass, host, port, db)
     client, err := mongo.NewClient(options.Client().ApplyURI(connectionStr))
     if err != nil {
-        log.Fatal(err)
+        log.Error(err)
+        return PodcastRepo{}, errors.New("503 - Service Unavailable: " + err.Error())
     }
     ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
     err = client.Connect(ctx)
     if err != nil {
-        log.Fatal(err)
+        log.Error(err)
+        return PodcastRepo{}, errors.New("503 - Service Unavailable: " + err.Error())
     }
-    defer client.Disconnect(ctx)
-
-    podcastsCollection := client.Database(env.DbName).Collection("podcasts")
-
-    result, err := col.InsertOne(ctx, oneDoc)
-    newID := result.InsertedID
-
-    db.C("podcasts").UpdateId(mongoPodcastId, model.Podcast{ model.Episode: episode })
-    //{VisitedAt: time.Now().UTC()}
+    var podcastRepo PodcastRepoImpl = PodcastCodeRepoImpl{ client }
+    return podcastRepo, nil
+   // defer client.Disconnect(ctx)
 }
+
+
+AddPodcast(repo PodcastRepoImpl) (podcast model.Podcast) (model.Podcast, error) {
+    podcastsCollection := repo.Client.Database(DATABASE).Collection(COLLECTION)
+    
+    now := time.Now().UTC()
+
+    podcast.Created = now
+    podcast.Updated = now
+
+    if len(podcast.Episodes)>0 {
+        for i := 0; i < len(podcast.Episodes); i++ {
+            podcast.Episodes[i].Created = now
+            podcast.Episodes[i].Updated = now 
+        }
+    }
+         
+    result, err := podcastsCollection.InsertOne(ctx, podcast)
+    newID := result.InsertedID
+}
+
+GetAllPodcasts() ([]model.Podcast, error) {
+
+}
+
+GetPodcastById(id string) (model.Podcast, error) {}
+
+DeletePodcastById(id string) error {}
+
+AddEpisode(id string, episode model.Episode) (model.Episode, error) {}
+
+GetAllEpisodesByPodcastId(id string) ([]model.Episode, error) {}
+
+GetEpisodeByNumber(n int) (model.Episode, error) {}
+
+DeleteEpisodeByPodcastIdAndEpisodeNumber(id string, n int) error {}
+
 
 func FindAll() {
     cur, err := collection.Find(context.Background(), bson.D{})
@@ -129,4 +176,28 @@ func ReplaceOneOrInsert() {
         fmt.Printf("inserted a new document with ID %v\n", result.UpsertedID)
     }
 }
+
+
+AddPodcast(podcast model.Podcast) (model.Podcast, error) {
+  return (*Repo).Add(podcast)
+}
+
+GetAllPodcasts() ([]model.Podcast, error) {
+  
+}
+
+GetPodcastById(id string) (model.Podcast, error) {}
+
+DeletePodcastById(id string) error {}
+
+AddEpisode(id string, episode model.Episode) (model.Episode, error) {}
+
+GetAllEpisodesByPodcastId(id string) ([]model.Episode, error) {}
+
+GetEpisodeByNumber(n int) (model.Episode, error) {}
+
+DeleteEpisodeByPodcastIdAndEpisodeNumber(id string, n int) error {}
+
+
+
 

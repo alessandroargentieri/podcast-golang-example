@@ -17,14 +17,7 @@ func LoadConfigs() {
 	log.SetReportCaller(true)
 	log.SetLevel(env.GetLogLevel())
 
-	configs := make(map[string]string)
-	configs["host"] = env.DbHost
-	configs["port"] = fmt.Sprintf("%v", env.DbPort)
-	configs["user"] = env.DbUser
-	configs["password"] = env.DbPassword
-	configs["dbname"] = env.DbName
-
-	repo, err := repository.InitializeRepository(configs)
+	repo, err := repository.InitializeRepo(configs)
 	if err != nil {
 		log.Error(err.Error())
 	}
@@ -45,7 +38,7 @@ AddPodcast(podcast model.Podcast) (model.Podcast, error) {
 }
 
 GetAllPodcasts() ([]model.Podcast, error) {
-	
+
 }
 
 GetPodcastById(id string) (model.Podcast, error) {}

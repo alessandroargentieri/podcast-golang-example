@@ -3,9 +3,10 @@ package main
 import (
 	env "podcast/environment"
 	"podcast/handler"
-	//"podcast/middleware"
+	"podcast/middleware"
 	"podcast/repository"
 	"fmt"
+	"context"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -38,5 +39,5 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", env.Port), router))
 
-	defer (*middleware.Repo).(repository.PostalCodeRepoImpl).Db.Close()
+	defer (*middleware.Repo).(repository.PostalCodeRepoImpl).Client.Disconnect(context.WithTimeout(context.Background(), 10*time.Second))
 }
